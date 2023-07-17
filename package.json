@@ -1,5 +1,5 @@
 {
-  "name": "indexed-db-ts",
+  "name": "agile-store",
   "devDependencies": {
     "@commitlint/cli": "^17.6.6",
     "@commitlint/config-conventional": "^17.6.6",
