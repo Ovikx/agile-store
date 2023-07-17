@@ -1,0 +1,21 @@
+name: Setup
+description: Setup Node.js and install dependencies for both the library and the example app
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: "npm"
+    - name: Install library dependencies
+      run: npm ci
+      shell: bash
+    
+    
+    - name: Install example app dependencies
+      run: |
+        cd example-vite-react
+        npm ci
+      shell: bash
