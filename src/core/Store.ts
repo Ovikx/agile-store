@@ -2,12 +2,10 @@ import { StoreConfig } from "../types/types";
 
 export class Store<T> {
   readonly _cfg: StoreConfig<T>;
-  dbInjected: boolean;
-  _db: IDBDatabase | undefined;
+  database: IDBDatabase | undefined;
 
   constructor(cfg: StoreConfig<T>) {
     this._cfg = cfg;
-    this.dbInjected = false;
   }
 
   /**
@@ -15,8 +13,7 @@ export class Store<T> {
    * @param db Database to inject into the store
    */
   injectDB(db: IDBDatabase) {
-    this._db = db;
-    this.dbInjected = true;
+    this.database = db;
   }
 }
 
