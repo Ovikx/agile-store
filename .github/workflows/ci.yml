@@ -57,6 +57,18 @@ jobs:
 
       - name: Type check
         run: tsc
+  
+  pack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup
+        uses: ./.github/actions/setup
+
+      - name: Pack tarball
+        run: npm pack
 
   build-example:
     runs-on: ubuntu-latest
