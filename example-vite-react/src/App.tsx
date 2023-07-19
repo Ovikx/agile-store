@@ -2,9 +2,16 @@ import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
+import { itemsStore } from "./db/db";
 
 function App() {
   const [count, setCount] = useState(0);
+  itemsStore
+    .add({
+      name: "hello world!",
+      price: 1000,
+    })
+    .catch((err) => console.log(err));
 
   return (
     <>
