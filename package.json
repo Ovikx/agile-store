@@ -1,5 +1,16 @@
 {
   "name": "agile-store",
+  "version": "0.1.0",
+  "description": "Streamlined typed IndexedDB operations with a store-centric interface and implicit transaction handling",
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "clean": "npx rimraf lib/",
+    "prepack": "npx rimraf lib/ && tsc"
+  },
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
   "devDependencies": {
     "@commitlint/cli": "^17.6.6",
     "@commitlint/config-conventional": "^17.6.6",
@@ -8,6 +19,7 @@
     "eslint": "^8.45.0",
     "husky": "^8.0.3",
     "prettier": "3.0.0",
+    "rimraf": "^5.0.1",
     "typescript": "^5.1.6"
   }
 }
