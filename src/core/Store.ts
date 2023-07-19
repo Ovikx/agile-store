@@ -1,4 +1,5 @@
 import { StoreConfig } from "../types/types";
+import { convertDOMException } from "../utils";
 
 export class Store<T> {
   readonly _cfg: StoreConfig<T>;
@@ -14,6 +15,47 @@ export class Store<T> {
    */
   injectDB(db: IDBDatabase) {
     this.database = db;
+  }
+
+  async add(entry: T, transaction?: IDBTransaction): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // Ensure the DB is defined
+      if (this.database == undefined) {
+        reject(
+          new Error("Database object hasn't been injected into this store."),
+        );
+        return;
+      }
+
+      // Create transaction if one isn't provided already
+      const tx =
+        transaction ?? this.database.transaction([this._cfg.name], "readwrite");
+
+      // Make the request
+      const req = tx.objectStore(this._cfg.name).add(entry);
+
+      req.onsuccess = () => {
+        console.log("Put an item into the store!");
+        // If transaction was provided, we resolve on request success and not on transaction completion
+        if (transaction) resolve();
+      };
+
+      req.onerror = () => {
+        reject(convertDOMException(req.error));
+      };
+
+      // Handle transaction resolution if it's original
+      if (!transaction) {
+        tx.oncomplete = () => {
+          console.log("Transaction completed!");
+          resolve();
+        };
+
+        tx.onerror = () => {
+          reject(convertDOMException(tx.error));
+        };
+      }
+    });
   }
 }
 
@@ -37,7 +79,7 @@ export async function createStores<const T extends Store<never>[]>(
 
     request.onerror = () => {
       console.log(request.error);
-      reject(new Error(`[${request.error?.name}] ${request.error?.message}`));
+      reject(convertDOMException(request.error));
     };
 
     request.onupgradeneeded = () => {
