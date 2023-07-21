@@ -21,6 +21,6 @@ module.exports = {
     sourceType: "module",
   },
   plugins: ["@typescript-eslint"],
-  ignorePatterns: ["lib/"],
+  ignorePatterns: ["lib/", "*.config.js"],
   rules: {},
 };
