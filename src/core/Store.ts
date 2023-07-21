@@ -41,7 +41,6 @@ export class Store<T> {
       const req = tx.objectStore(this._cfg.name).add(record);
 
       req.onsuccess = () => {
-        console.log("Put an item into the store!");
         // If transaction was provided, we resolve on request success and not on transaction completion
         if (transaction) resolve();
       };
@@ -53,7 +52,6 @@ export class Store<T> {
       // Handle transaction resolution if it's original
       if (!transaction) {
         tx.oncomplete = () => {
-          console.log("Transaction completed!");
           resolve();
         };
 
@@ -92,7 +90,6 @@ export class Store<T> {
       const req = tx.objectStore(this._cfg.name).get(IDBKeyRange.only(key));
 
       req.onsuccess = () => {
-        console.log("Put an item into the store!");
         // If transaction was provided, we resolve on request success and not on transaction completion
         if (transaction) resolve(req.result ?? null);
       };
@@ -104,7 +101,6 @@ export class Store<T> {
       // Handle transaction resolution if it's original
       if (!transaction) {
         tx.oncomplete = () => {
-          console.log("Transaction completed!");
           resolve(req.result ?? null);
         };
 
@@ -135,7 +131,6 @@ export async function createStores<T extends object>(
     };
 
     request.onerror = () => {
-      console.log(request.error);
       reject(convertDOMException(request.error));
     };
 
