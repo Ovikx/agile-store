@@ -4,4 +4,5 @@ export const itemsStore = new Store<Item>({
   name: "items",
   keyPath: "name",
   autoIncrement: false,
+  indices: [],
 });

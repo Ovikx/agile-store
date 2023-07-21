@@ -5,7 +5,7 @@ export class Store<T> {
   readonly _cfg: StoreConfig<T>;
   database: IDBDatabase | undefined;
 
-  constructor(cfg: StoreConfig<T>) {
+  constructor(readonly cfg: StoreConfig<T>) {
     this._cfg = cfg;
   }
 
@@ -17,7 +17,13 @@ export class Store<T> {
     this.database = db;
   }
 
-  async add(entry: T, transaction?: IDBTransaction): Promise<void> {
+  /**
+   * Adds a record to the store
+   * @param record Record to add to the store
+   * @param transaction A transaction, if one has already been started
+   * @returns Void
+   */
+  async add(record: T, transaction?: IDBTransaction): Promise<void> {
     return new Promise((resolve, reject) => {
       // Ensure the DB is defined
       if (this.database == undefined) {
@@ -32,7 +38,7 @@ export class Store<T> {
         transaction ?? this.database.transaction([this._cfg.name], "readwrite");
 
       // Make the request
-      const req = tx.objectStore(this._cfg.name).add(entry);
+      const req = tx.objectStore(this._cfg.name).add(record);
 
       req.onsuccess = () => {
         console.log("Put an item into the store!");
@@ -57,15 +63,66 @@ export class Store<T> {
       }
     });
   }
+
+  // TODO: fix type to constrain the input to the actual type of keyPath instead of T[keyof T]
+  /**
+   * Retrieves a record from the store by the given key
+   * @param key Key to find
+   * @param transaction A transaction, if one has already been started
+   * @returns A matching record or null if nothing has been found
+   */
+  async getByKey(
+    key: T[this["_cfg"]["keyPath"]],
+    transaction?: IDBTransaction,
+  ): Promise<T | null> {
+    return new Promise((resolve, reject) => {
+      // Ensure the DB is defined
+      if (this.database == undefined) {
+        reject(
+          new Error("Database object hasn't been injected into this store."),
+        );
+        return;
+      }
+
+      // Create transaction if one isn't provided already
+      const tx =
+        transaction ?? this.database.transaction([this._cfg.name], "readwrite");
+
+      // Make the request
+      const req = tx.objectStore(this._cfg.name).get(IDBKeyRange.only(key));
+
+      req.onsuccess = () => {
+        console.log("Put an item into the store!");
+        // If transaction was provided, we resolve on request success and not on transaction completion
+        if (transaction) resolve(req.result ?? null);
+      };
+
+      req.onerror = () => {
+        reject(convertDOMException(req.error));
+      };
+
+      // Handle transaction resolution if it's original
+      if (!transaction) {
+        tx.oncomplete = () => {
+          console.log("Transaction completed!");
+          resolve(req.result ?? null);
+        };
+
+        tx.onerror = () => {
+          reject(convertDOMException(tx.error));
+        };
+      }
+    });
+  }
 }
 
-export async function createStores<const T extends Store<never>[]>(
+export async function createStores<T extends object>(
   dbName: string,
   version: number,
-  stores: T,
+  stores: Store<T>[],
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const request = window.indexedDB.open(dbName, version);
+    const request = indexedDB.open(dbName, version);
 
     /** Inject the database into each Store */
     request.onsuccess = () => {
@@ -88,10 +145,14 @@ export async function createStores<const T extends Store<never>[]>(
       // Process the configs of each store
       // This involves adding each store and indices within each store
       for (const store of stores) {
-        const objStore = db.createObjectStore(store._cfg.name, {
-          ...(store._cfg.keyPath && { keyPath: store._cfg.keyPath }),
-          ...(store._cfg.autoIncrement && { autoIncrement: true }),
-        });
+        const storeExists = db.objectStoreNames.contains(store._cfg.name);
+        const objStore = storeExists
+          ? request.transaction!.objectStore(store._cfg.name)
+          : db.createObjectStore(store._cfg.name, {
+              ...((store._cfg.keyPath &&
+                ({ keyPath: store._cfg.keyPath } as object)) as object),
+              ...(store._cfg.autoIncrement && { autoIncrement: true }),
+            });
 
         // Create indices
         if (store._cfg.indices != undefined) {

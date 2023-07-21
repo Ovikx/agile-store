@@ -1,6 +1,8 @@
 export interface StoreConfig<T> {
-  name: string;
-  keyPath?: keyof T & string;
-  autoIncrement?: boolean;
-  indices?: (keyof T)[];
+  readonly name: string;
+  readonly keyPath: keyof T & string;
+  readonly autoIncrement?: boolean;
+  readonly indices: (keyof T & string)[];
 }
+
+export type SearchQualifier<T> = (entry: T) => boolean;
