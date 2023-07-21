@@ -32,6 +32,63 @@ export class Store<T> {
     );
   }
 
+  /**
+   * Adds many records at once
+   * @param records Records to add
+   * @param ignoreErrors Whether or not to error silently
+   * @param transaction Transaction to perform this operation in
+   * @returns Void
+   */
+  async bulkAdd(
+    records: T[],
+    ignoreErrors: boolean,
+    transaction?: IDBTransaction,
+  ): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      // Ensure the DB is defined
+      if (this.database == undefined) {
+        reject(
+          new Error("Database object hasn't been injected into this store."),
+        );
+        return;
+      }
+
+      // Create transaction if one isn't provided already
+      const tx =
+        transaction ?? this.database.transaction([this._cfg.name], "readwrite");
+
+      const activeStore = tx.objectStore(this._cfg.name);
+      for (let i = 0; i < records.length; i++) {
+        const req = activeStore.add(records[i]);
+
+        // Handle error
+        if (!ignoreErrors) {
+          req.onerror = () => {
+            reject(convertDOMException(req.error));
+          };
+        }
+        // Handle last record success
+        if (i == records.length - 1) {
+          req.onsuccess = () => {
+            if (transaction) resolve();
+          };
+
+          if (!transaction) {
+            tx.oncomplete = () => {
+              resolve();
+            };
+
+            if (!ignoreErrors) {
+              tx.onerror = () => {
+                reject(convertDOMException(tx.error));
+              };
+            }
+          }
+        }
+      }
+    });
+  }
+
   // TODO: fix type to constrain the input to the actual type of keyPath instead of T[keyof T]
   /**
    * Retrieves a record from the store by the given key
