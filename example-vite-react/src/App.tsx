@@ -7,17 +7,17 @@ import { itemsStore } from "./db/db";
 function App() {
   const [count, setCount] = useState(0);
 
-  // itemsStore
-  //   .add({
-  //     name: "PLEAES WORK!!",
-  //     price: 1000,
-  //     onSale: true,
-  //   })
-  //   .catch((err) => console.log(err));
+  itemsStore
+    .add({
+      name: "HEHHHLOO WORLD!!!!",
+      price: 1000,
+      onSale: true,
+    })
+    .catch((err) => console.log(err));
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   void itemsStore
-    .getByKey("PLEAES WdORK!!")
-    .then((res) => console.log(res ? res.name : "could not find"));
+    .getByKey("HEHHHLOO WORLD!!!!")
+    .then((res) => console.log(res ? JSON.stringify(res) : "could not find"));
 
   return (
     <>

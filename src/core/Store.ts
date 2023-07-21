@@ -24,42 +24,12 @@ export class Store<T> {
    * @returns Void
    */
   async add(record: T, transaction?: IDBTransaction): Promise<void> {
-    return new Promise((resolve, reject) => {
-      // Ensure the DB is defined
-      if (this.database == undefined) {
-        reject(
-          new Error("Database object hasn't been injected into this store."),
-        );
-        return;
-      }
-
-      // Create transaction if one isn't provided already
-      const tx =
-        transaction ?? this.database.transaction([this._cfg.name], "readwrite");
-
-      // Make the request
-      const req = tx.objectStore(this._cfg.name).add(record);
-
-      req.onsuccess = () => {
-        // If transaction was provided, we resolve on request success and not on transaction completion
-        if (transaction) resolve();
-      };
-
-      req.onerror = () => {
-        reject(convertDOMException(req.error));
-      };
-
-      // Handle transaction resolution if it's original
-      if (!transaction) {
-        tx.oncomplete = () => {
-          resolve();
-        };
-
-        tx.onerror = () => {
-          reject(convertDOMException(tx.error));
-        };
-      }
-    });
+    return _wrapTxOp(
+      this,
+      (tx) => tx.objectStore(this._cfg.name).add(record),
+      () => {},
+      transaction,
+    );
   }
 
   // TODO: fix type to constrain the input to the actual type of keyPath instead of T[keyof T]
@@ -73,43 +43,59 @@ export class Store<T> {
     key: T[this["_cfg"]["keyPath"]],
     transaction?: IDBTransaction,
   ): Promise<T | null> {
-    return new Promise((resolve, reject) => {
-      // Ensure the DB is defined
-      if (this.database == undefined) {
-        reject(
-          new Error("Database object hasn't been injected into this store."),
-        );
-        return;
-      }
-
-      // Create transaction if one isn't provided already
-      const tx =
-        transaction ?? this.database.transaction([this._cfg.name], "readwrite");
-
-      // Make the request
-      const req = tx.objectStore(this._cfg.name).get(IDBKeyRange.only(key));
-
-      req.onsuccess = () => {
-        // If transaction was provided, we resolve on request success and not on transaction completion
-        if (transaction) resolve(req.result ?? null);
-      };
-
-      req.onerror = () => {
-        reject(convertDOMException(req.error));
-      };
-
-      // Handle transaction resolution if it's original
-      if (!transaction) {
-        tx.oncomplete = () => {
-          resolve(req.result ?? null);
-        };
-
-        tx.onerror = () => {
-          reject(convertDOMException(tx.error));
-        };
-      }
-    });
+    return _wrapTxOp<T, T | null>(
+      this,
+      (tx) => tx.objectStore(this._cfg.name).get(IDBKeyRange.only(key)),
+      (req) => req.result ?? null,
+      transaction,
+    );
   }
+
+  //async getByIndex(index: T[this["_cfg"]["indices"][number]]);
+}
+
+async function _wrapTxOp<T, K>(
+  store: Store<T>,
+  txOp: (tx: IDBTransaction) => IDBRequest,
+  resolution: (request: IDBRequest) => K,
+  givenTx?: IDBTransaction,
+): Promise<K> {
+  return new Promise<K>((resolve, reject) => {
+    // Ensure the DB is defined
+    if (store.database == undefined) {
+      reject(
+        new Error("Database object hasn't been injected into this store."),
+      );
+      return;
+    }
+
+    // Create transaction if one isn't provided already
+    const tx =
+      givenTx ?? store.database.transaction([store._cfg.name], "readwrite");
+
+    // Make the request
+    const req = txOp(tx);
+
+    req.onsuccess = () => {
+      // If transaction was provided, we resolve on request success and not on transaction completion
+      if (givenTx) resolve(resolution(req));
+    };
+
+    req.onerror = () => {
+      reject(convertDOMException(req.error));
+    };
+
+    // Handle transaction resolution if it's original
+    if (!givenTx) {
+      tx.oncomplete = () => {
+        resolve(resolution(req));
+      };
+
+      tx.onerror = () => {
+        reject(convertDOMException(tx.error));
+      };
+    }
+  });
 }
 
 export async function createStores<T extends object>(
