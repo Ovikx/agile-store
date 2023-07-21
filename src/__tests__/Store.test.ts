@@ -1,23 +1,18 @@
 import "fake-indexeddb/auto";
-import { Store, createStores } from "../core/Store";
-import { Person } from "./types";
-
-const store = new Store<Person>({
-  name: "people",
-  keyPath: "name",
-  indices: ["registrationDate"],
-});
+import { createStores } from "../core/Store";
+import { peopleStore } from "./stores";
+import { populate } from "./populator";
 
 beforeAll(() => {
   return new Promise<void>((resolve, reject) => {
-    createStores("test", 1, [store])
-      .then(() => resolve())
+    createStores("test", 1, [peopleStore])
+      .then(() => populate(peopleStore, 1000).then(() => resolve()))
       .catch(() => reject());
   });
 });
 
 describe("test", () => {
   test("test", () => {
-    expect(store._cfg.name).toBe("people");
+    expect(peopleStore._cfg.name).toBe("people");
   });
 });
