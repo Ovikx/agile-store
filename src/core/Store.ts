@@ -58,34 +58,53 @@ export class Store<T> {
         transaction ?? this.database.transaction([this._cfg.name], "readwrite");
 
       const activeStore = tx.objectStore(this._cfg.name);
+
+      // To keep track of successfully added records
+      let addedCount = 0;
+
+      /**
+       * Function to call when no error has occured (ignoreError == true counts as a pass)
+       * @param i Count of the for loop
+       */
+      const handlePass = (i: number, success: boolean) => {
+        if (success) addedCount++;
+        if (
+          addedCount === records.length ||
+          (ignoreErrors && i == records.length - 1)
+        ) {
+          console.log(`Added ${addedCount} record(s)`);
+          if (transaction) {
+            resolve();
+          } else {
+            tx.oncomplete = () => {
+              resolve();
+            };
+          }
+        }
+      };
+
       for (let i = 0; i < records.length; i++) {
         const req = activeStore.add(records[i]);
 
         // Handle error
-        if (!ignoreErrors) {
-          req.onerror = () => {
+        req.onerror = (event) => {
+          event.preventDefault();
+          if (!ignoreErrors) {
             reject(convertDOMException(req.error));
-          };
-        }
-        // Handle last record success
-        if (i == records.length - 1) {
-          req.onsuccess = () => {
-            if (transaction) resolve();
-          };
-
-          if (!transaction) {
-            tx.oncomplete = () => {
-              resolve();
-            };
-
-            if (!ignoreErrors) {
-              tx.onerror = () => {
-                reject(convertDOMException(tx.error));
-              };
-            }
+          } else {
+            handlePass(i, false);
           }
-        }
+        };
+
+        // Handle success
+        req.onsuccess = () => {
+          handlePass(i, true);
+        };
       }
+
+      tx.onerror = () => {
+        if (!ignoreErrors) reject(convertDOMException(tx.error));
+      };
     });
   }
 
