@@ -8,7 +8,7 @@
   "scripts": {
     "clean": "npx rimraf lib/",
     "prepack": "npx rimraf lib/ && tsc",
-    "test": "jest"
+    "test": "jest --detectOpenHandles"
   },
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
