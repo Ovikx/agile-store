@@ -166,6 +166,21 @@ export class Store<T> {
   }
 
   /**
+   * Puts a record in the store (updates if key exists, adds if it doesn't)
+   * @param record Record to put in the store
+   * @param transaction A transaction, if one has already been started
+   * @returns Void
+   */
+  async put(record: T, transaction?: IDBTransaction): Promise<void> {
+    return _wrapTxOp(
+      this,
+      (tx) => tx.objectStore(this._cfg.name).put(record),
+      () => {},
+      transaction,
+    );
+  }
+
+  /**
    * Returns an array of objects that satisfy the given qualifying function
    * @param qualifier A function that evaluates if a record satisfies the query by returning a boolean
    * @param transaction A transaction, if one has already been started

@@ -164,3 +164,22 @@ describe("Delete tests", () => {
     expect(res).toBeNull();
   });
 });
+
+describe("Update tests", () => {
+  test("Update by key", async () => {
+    const key = "UPDATE";
+    const newAge = 18;
+    const record = {
+      username: key,
+      age: 0,
+      registrationDate: 0,
+      verified: false,
+    };
+    await usersStore.add(record);
+
+    await usersStore.put({ ...record, age: newAge });
+    const res = await usersStore.getByKey(key);
+
+    expect(res?.age).toBe(newAge);
+  });
+});
