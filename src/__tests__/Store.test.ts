@@ -45,9 +45,10 @@ describe("Insert tests", () => {
     ).rejects.toThrow();
   });
 
-  test("Valid bulk insert lots of records", async () => {
+  test("Valid bulk insert lots of records", () => {
     const records: User[] = [];
-    for (let i = 0; i < 10000; i++) {
+    const numRecords = 10000;
+    for (let i = 0; i < numRecords; i++) {
       records.push({
         username: i.toString(),
         age: i,
@@ -56,7 +57,9 @@ describe("Insert tests", () => {
       });
     }
 
-    await expect(usersStore.bulkAdd(records, false)).resolves.not.toThrow();
+    usersStore
+      .bulkAdd(records, false)
+      .then((res) => expect(res).toBe(numRecords));
   });
 
   test("Invalid bulk insert lots of records (ignore errors)", async () => {
@@ -71,5 +74,24 @@ describe("Insert tests", () => {
     }
 
     await expect(usersStore.bulkAdd(records, true)).resolves.not.toThrow();
+  });
+});
+
+describe("Read tests", () => {
+  test("Get existing record by key", () => {
+    const key = 5000;
+    usersStore.getByKey(key.toString()).then((res) =>
+      expect(res).toMatchObject<User>({
+        username: key.toString(),
+        age: key,
+        registrationDate: key,
+        verified: !!key,
+      }),
+    );
+  });
+
+  test("Get nonexistent record by key", () => {
+    const key = -1;
+    usersStore.getByKey(key.toString()).then((res) => expect(res).toBeNull());
   });
 });
