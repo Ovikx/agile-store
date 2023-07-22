@@ -1,6 +1,6 @@
 {
   "name": "agile-store",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Streamlined typed IndexedDB operations with a store-centric interface and implicit transaction handling",
   "files": [
     "lib"
