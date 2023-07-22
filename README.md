@@ -1,6 +1,6 @@
 # agile-store
 
-The goal of this library is to provide developers with a more direct way of interfacing with their stores with type-safety in mind. It keeps transaction handling implicit for simple operations, keeping the headache away for trivial tasks.
+The goal of this library is to provide developers with a more direct way of interfacing with their stores with type-safety in mind. It keeps transaction handling implicit for simple operations, keeping the headache away for trivial tasks. Built entirely with Promises.
 
 ## Installation
 
@@ -58,7 +58,43 @@ createStores("test-db", 1, [itemsStore]);
 
 </blockquote>
 
-### CRUD operation docs coming soon
+### Basic CRUD operations
+
+#### Add a record
+
+```ts
+itemsStore.add({
+  name: "Piano",
+  price: 10000,
+  onSale: true,
+});
+```
+
+#### Get a record
+
+```ts
+const record = await itemsStore.getByKey("Piano");
+```
+
+Note that there are multiple ways to query for records, including a `filter` method that uses a user-provided qualifier function to return all records that pass the function.
+
+#### Update a record
+
+```ts
+itemsStore.put({
+  name: "Piano",
+  price: 10000,
+  onSale: false,
+});
+```
+
+Note that `put` requires a full object of the store's type. Partial object update operations coming soon.
+
+#### Delete a record
+
+```ts
+itemsStore.deleteByKey("Piano");
+```
 
 ## License
 
