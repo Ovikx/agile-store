@@ -43,8 +43,8 @@ export class Store<T> {
     records: T[],
     ignoreErrors: boolean,
     transaction?: IDBTransaction,
-  ): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
+  ): Promise<number> {
+    return new Promise<number>((resolve, reject) => {
       // Ensure the DB is defined
       if (this.database == undefined) {
         reject(
@@ -72,12 +72,11 @@ export class Store<T> {
           addedCount === records.length ||
           (ignoreErrors && i == records.length - 1)
         ) {
-          console.log(`Added ${addedCount} record(s)`);
           if (transaction) {
-            resolve();
+            resolve(addedCount);
           } else {
             tx.oncomplete = () => {
-              resolve();
+              resolve(addedCount);
             };
           }
         }
