@@ -147,3 +147,20 @@ describe("Read tests", () => {
     ]);
   });
 });
+
+describe("Delete tests", () => {
+  test("Delete record by key", async () => {
+    const key = "NONEXISTENT";
+    await usersStore.add({
+      username: key,
+      age: 0,
+      registrationDate: 0,
+      verified: false,
+    });
+
+    await usersStore.deleteByKey(key);
+    const res = await usersStore.getByKey(key);
+
+    expect(res).toBeNull();
+  });
+});

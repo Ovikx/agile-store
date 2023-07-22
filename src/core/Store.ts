@@ -107,6 +107,18 @@ export class Store<T> {
     });
   }
 
+  async deleteByKey(
+    key: T[this["_cfg"]["keyPath"]],
+    transaction?: IDBTransaction,
+  ): Promise<void> {
+    return _wrapTxOp<T, void>(
+      this,
+      (tx) => tx.objectStore(this._cfg.name).delete(IDBKeyRange.only(key)),
+      () => {},
+      transaction,
+    );
+  }
+
   // TODO: fix type to constrain the input to the actual type of keyPath instead of T[keyof T]
   /**
    * Retrieves a record from the store by the given key
