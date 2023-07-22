@@ -5,4 +5,4 @@ export interface StoreConfig<T> {
   readonly indices: (keyof T & string)[];
 }
 
-export type SearchQualifier<T> = (entry: T) => boolean;
+export type SearchQualifier<T> = (record: T) => boolean;

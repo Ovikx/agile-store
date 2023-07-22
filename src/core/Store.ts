@@ -1,4 +1,4 @@
-import { StoreConfig } from "../types/types";
+import { SearchQualifier, StoreConfig } from "../types/types";
 import { convertDOMException } from "../utils";
 
 export class Store<T> {
@@ -136,25 +136,76 @@ export class Store<T> {
     index: this["_cfg"]["indices"][number],
     value: T[typeof index],
   ): Promise<T | null> {
+    if (!this._cfg.indices.includes(index)) {
+      throw new Error(
+        "The index you passed in isn't an index you listed in the constructor of this store.",
+      );
+    }
+
+    return _wrapTxOp(
+      this,
+      (tx) =>
+        tx
+          .objectStore(this._cfg.name)
+          .index(index)
+          .get(IDBKeyRange.only(value)),
+      (req) => req.result ?? null,
+    );
+  }
+
+  /**
+   * Returns an array of objects that satisfy the given qualifying function
+   * @param qualifier A function that evaluates if a record satisfies the query by returning a boolean
+   * @param transaction A transaction, if one has already been started
+   * @returns Array of objects of type T
+   */
+  async filter(
+    qualifier: SearchQualifier<T>,
+    limit = Number.POSITIVE_INFINITY,
+    transaction?: IDBTransaction,
+  ): Promise<T[]> {
     return new Promise((resolve, reject) => {
-      if (!this._cfg.indices.includes(index)) {
+      // Ensure the DB is defined
+      if (this.database == undefined) {
         reject(
-          new Error(
-            "The index you passed in isn't an index you listed in the constructor of this store.",
-          ),
+          new Error("Database object hasn't been injected into this store."),
         );
         return;
       }
 
-      _wrapTxOp(
-        this,
-        (tx) =>
-          tx
-            .objectStore(this._cfg.name)
-            .index(index)
-            .get(IDBKeyRange.only(value)),
-        (req) => req.result ?? null,
-      );
+      const records: T[] = [];
+      let numFound = 0;
+
+      // Create transaction if one isn't provided already
+      const tx =
+        transaction ?? this.database.transaction([this._cfg.name], "readonly");
+
+      const cursorReq = tx.objectStore(this._cfg.name).openCursor();
+      cursorReq.onsuccess = () => {
+        const cursor = cursorReq.result;
+        if (cursor && numFound < limit) {
+          if (qualifier(cursor.value)) {
+            records.push(cursor.value);
+            numFound++;
+          }
+          cursor.continue();
+        }
+      };
+
+      cursorReq.onerror = () => {
+        reject(convertDOMException(cursorReq.error));
+      };
+
+      // Handle transaction resolution if it's original
+      if (!transaction) {
+        tx.oncomplete = () => {
+          resolve(records);
+        };
+
+        tx.onerror = () => {
+          reject(convertDOMException(tx.error));
+        };
+      }
     });
   }
 }
