@@ -1,5 +1,4 @@
 import { Store } from "../core/Store";
-import { usersStore } from "./stores";
 import { User } from "./types";
 import { faker } from "@faker-js/faker";
 
@@ -18,7 +17,7 @@ export async function populate(
     records.push(generateRecord());
   }
 
-  await usersStore.bulkAdd(records, true);
+  await store.bulkAdd(records, true);
 }
 
 export function generateRecord(): User {
