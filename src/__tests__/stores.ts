@@ -1,8 +1,8 @@
 import { Store } from "../core/Store";
-import { Person } from "./types";
+import { User } from "./types";
 
-export const peopleStore = new Store<Person>({
-  name: "people",
-  keyPath: "name",
+export const usersStore = new Store<User>({
+  name: "users",
+  keyPath: "username",
   indices: ["registrationDate"],
 });

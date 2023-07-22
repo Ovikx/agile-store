@@ -1,5 +1,5 @@
-export interface Person {
-  name: string;
+export interface User {
+  username: string;
   age: number;
   registrationDate: number;
   verified: boolean;
