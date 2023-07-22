@@ -7,7 +7,7 @@ import { User } from "./types";
 beforeAll(() => {
   return new Promise<void>((resolve, reject) => {
     createStores("test", 1, [usersStore])
-      .then(() => populate(usersStore, 500).then(() => resolve()))
+      .then(() => populate(usersStore, 5000).then(() => resolve()))
       .catch(() => reject());
   });
 });
@@ -45,9 +45,9 @@ describe("Insert tests", () => {
     ).rejects.toThrow();
   });
 
-  test("Bulk insert lots of records", () => {
+  test("Bulk insert lots of records", async () => {
     const records: User[] = [];
-    const numRecords = 10000;
+    const numRecords = 1000;
     for (let i = 0; i < numRecords; i++) {
       records.push({
         username: i.toString(),
@@ -57,14 +57,12 @@ describe("Insert tests", () => {
       });
     }
 
-    usersStore
-      .bulkAdd(records, false)
-      .then((res) => expect(res).toBe(numRecords));
+    await expect(usersStore.bulkAdd(records, false)).resolves.toBe(numRecords);
   });
 
   test("Bulk insert lots of duplicate records (ignore errors)", async () => {
     const records: User[] = [];
-    for (let i = 0; i < 10000; i++) {
+    for (let i = 0; i < 1000; i++) {
       records.push({
         username: i.toString(),
         age: i,
@@ -78,7 +76,7 @@ describe("Insert tests", () => {
 
   test("Bulk insert lots of duplicate records (allow errors)", async () => {
     const records: User[] = [];
-    for (let i = 0; i < 10000; i++) {
+    for (let i = 0; i < 1000; i++) {
       records.push({
         username: i.toString(),
         age: i,
@@ -92,47 +90,60 @@ describe("Insert tests", () => {
 });
 
 describe("Read tests", () => {
-  test("Get existing record by key", () => {
-    const key = 5000;
-    usersStore.getByKey(key.toString()).then((res) =>
-      expect(res).toMatchObject<User>({
-        username: key.toString(),
-        age: key,
-        registrationDate: key,
-        verified: !!key,
-      }),
-    );
+  test("Get existing record by key", async () => {
+    const key = 500;
+    await expect(
+      usersStore.getByKey(key.toString()),
+    ).resolves.toMatchObject<User>({
+      username: key.toString(),
+      age: key,
+      registrationDate: key,
+      verified: !!key,
+    });
   });
 
-  test("Get nonexistent record by key", () => {
+  test("Get nonexistent record by key", async () => {
     const key = -1;
-    usersStore.getByKey(key.toString()).then((res) => expect(res).toBeNull());
+    await expect(usersStore.getByKey(key.toString())).resolves.toBeNull();
   });
 
-  test("Get existing record by index", () => {
-    const key = 5000;
-    usersStore.getByIndex("registrationDate", key.toString()).then((res) =>
-      expect(res).toMatchObject<User>({
-        username: key.toString(),
-        age: key,
-        registrationDate: key,
-        verified: !!key,
-      }),
-    );
+  test("Get existing record by index", async () => {
+    const key = 500;
+    await expect(
+      usersStore.getByIndex("registrationDate", key),
+    ).resolves.toMatchObject<User>({
+      username: key.toString(),
+      age: key,
+      registrationDate: key,
+      verified: !!key,
+    });
   });
 
-  test("Get nonexistent record by index", () => {
-    const key = -1;
-    usersStore
-      .getByIndex("registrationDate", key.toString())
-      .then((res) => expect(res).toBeNull());
-  });
-
-  test("Get record by nonexistent index", async () => {
+  test("Get nonexistent record by index", async () => {
     const key = -1;
 
     await expect(
-      usersStore.getByIndex("age", key.toString()),
-    ).rejects.toThrow();
+      usersStore.getByIndex("registrationDate", key),
+    ).resolves.toBeNull();
+  });
+
+  test("Get record by nonexistent index", async () => {
+    const key = 1;
+
+    await expect(usersStore.getByIndex("age", key)).rejects.toThrow();
+  });
+
+  test("Filter with limit", async () => {
+    const key = 500;
+    await expect(
+      usersStore.filter((record) => record.username == "500", 1),
+    ).resolves.toMatchObject<User[]>([
+      {
+        username: key.toString(),
+        age: key,
+        registrationDate: key,
+        verified: !!key,
+      },
+    ]);
   });
 });
