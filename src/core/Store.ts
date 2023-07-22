@@ -235,6 +235,34 @@ export class Store<T> {
       }
     });
   }
+
+  /**
+   * Returns the number of records in the store
+   * @param transaction Transaction, if one has already been created
+   * @returns Number of records in the store
+   */
+  async count(transaction?: IDBTransaction): Promise<number> {
+    return _wrapTxOp<T, number>(
+      this,
+      (tx) => tx.objectStore(this._cfg.name).count(),
+      (req) => req.result,
+      transaction,
+    );
+  }
+
+  /**
+   * Deletes all documents in the store
+   * @param transaction Transaction, if one has already been created
+   * @returns Void
+   */
+  async clear(transaction?: IDBTransaction): Promise<void> {
+    return _wrapTxOp<T, void>(
+      this,
+      (tx) => tx.objectStore(this._cfg.name).clear(),
+      () => {},
+      transaction,
+    );
+  }
 }
 
 async function _wrapTxOp<T, K>(

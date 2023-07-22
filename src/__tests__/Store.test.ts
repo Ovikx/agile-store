@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto";
 import { createStores } from "../core/Store";
 import { usersStore } from "./stores";
-import { populate } from "./populator";
+import { generateRecord, populate } from "./populator";
 import { User } from "./types";
 
 beforeAll(() => {
@@ -181,5 +181,25 @@ describe("Update tests", () => {
     const res = await usersStore.getByKey(key);
 
     expect(res?.age).toBe(newAge);
+  });
+});
+
+describe("Misc. tests", () => {
+  test("Clear store", async () => {
+    await expect(usersStore.clear()).resolves.not.toThrow();
+  });
+
+  test("Count all records in empty store", async () => {
+    const res = await usersStore.count();
+    expect(res).toBe(0);
+  });
+
+  test("Count all records in populated store", async () => {
+    const toAdd: User[] = [];
+    for (let i = 0; i < 1000; i++) {
+      toAdd.push(generateRecord());
+    }
+    await usersStore.bulkAdd(toAdd, true);
+    await expect(usersStore.count()).resolves.toBeGreaterThan(0);
   });
 });
