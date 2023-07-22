@@ -126,7 +126,37 @@ export class Store<T> {
     );
   }
 
-  //async getByIndex(index: T[this["_cfg"]["indices"][number]]);
+  /**
+   * Gets a record by the given index and corresponding value
+   * @param index Index to search by
+   * @param value Value to search for
+   * @returns Object of type T if something was found, null if nothing was found
+   */
+  async getByIndex(
+    index: this["_cfg"]["indices"][number],
+    value: T[typeof index],
+  ): Promise<T | null> {
+    return new Promise((resolve, reject) => {
+      if (!this._cfg.indices.includes(index)) {
+        reject(
+          new Error(
+            "The index you passed in isn't an index you listed in the constructor of this store.",
+          ),
+        );
+        return;
+      }
+
+      _wrapTxOp(
+        this,
+        (tx) =>
+          tx
+            .objectStore(this._cfg.name)
+            .index(index)
+            .get(IDBKeyRange.only(value)),
+        (req) => req.result ?? null,
+      );
+    });
+  }
 }
 
 async function _wrapTxOp<T, K>(

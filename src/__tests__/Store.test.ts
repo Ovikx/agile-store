@@ -45,7 +45,7 @@ describe("Insert tests", () => {
     ).rejects.toThrow();
   });
 
-  test("Valid bulk insert lots of records", () => {
+  test("Bulk insert lots of records", () => {
     const records: User[] = [];
     const numRecords = 10000;
     for (let i = 0; i < numRecords; i++) {
@@ -62,7 +62,7 @@ describe("Insert tests", () => {
       .then((res) => expect(res).toBe(numRecords));
   });
 
-  test("Invalid bulk insert lots of records (ignore errors)", async () => {
+  test("Bulk insert lots of duplicate records (ignore errors)", async () => {
     const records: User[] = [];
     for (let i = 0; i < 10000; i++) {
       records.push({
@@ -74,6 +74,20 @@ describe("Insert tests", () => {
     }
 
     await expect(usersStore.bulkAdd(records, true)).resolves.not.toThrow();
+  });
+
+  test("Bulk insert lots of duplicate records (allow errors)", async () => {
+    const records: User[] = [];
+    for (let i = 0; i < 10000; i++) {
+      records.push({
+        username: i.toString(),
+        age: i,
+        registrationDate: i,
+        verified: !!i,
+      });
+    }
+
+    await expect(usersStore.bulkAdd(records, false)).rejects.toThrow();
   });
 });
 
@@ -93,5 +107,32 @@ describe("Read tests", () => {
   test("Get nonexistent record by key", () => {
     const key = -1;
     usersStore.getByKey(key.toString()).then((res) => expect(res).toBeNull());
+  });
+
+  test("Get existing record by index", () => {
+    const key = 5000;
+    usersStore.getByIndex("registrationDate", key.toString()).then((res) =>
+      expect(res).toMatchObject<User>({
+        username: key.toString(),
+        age: key,
+        registrationDate: key,
+        verified: !!key,
+      }),
+    );
+  });
+
+  test("Get nonexistent record by index", () => {
+    const key = -1;
+    usersStore
+      .getByIndex("registrationDate", key.toString())
+      .then((res) => expect(res).toBeNull());
+  });
+
+  test("Get record by nonexistent index", async () => {
+    const key = -1;
+
+    await expect(
+      usersStore.getByIndex("age", key.toString()),
+    ).rejects.toThrow();
   });
 });
