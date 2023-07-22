@@ -27,6 +27,7 @@ export class Store<T> {
     return _wrapTxOp(
       this,
       (tx) => tx.objectStore(this._cfg.name).add(record),
+      "readwrite",
       () => {},
       transaction,
     );
@@ -114,6 +115,7 @@ export class Store<T> {
     return _wrapTxOp<T, void>(
       this,
       (tx) => tx.objectStore(this._cfg.name).delete(IDBKeyRange.only(key)),
+      "readwrite",
       () => {},
       transaction,
     );
@@ -133,6 +135,7 @@ export class Store<T> {
     return _wrapTxOp<T, T | null>(
       this,
       (tx) => tx.objectStore(this._cfg.name).get(IDBKeyRange.only(key)),
+      "readonly",
       (req) => req.result ?? null,
       transaction,
     );
@@ -161,6 +164,7 @@ export class Store<T> {
           .objectStore(this._cfg.name)
           .index(index)
           .get(IDBKeyRange.only(value)),
+      "readonly",
       (req) => req.result ?? null,
     );
   }
@@ -175,6 +179,7 @@ export class Store<T> {
     return _wrapTxOp(
       this,
       (tx) => tx.objectStore(this._cfg.name).put(record),
+      "readwrite",
       () => {},
       transaction,
     );
@@ -245,6 +250,7 @@ export class Store<T> {
     return _wrapTxOp<T, number>(
       this,
       (tx) => tx.objectStore(this._cfg.name).count(),
+      "readonly",
       (req) => req.result,
       transaction,
     );
@@ -259,6 +265,7 @@ export class Store<T> {
     return _wrapTxOp<T, void>(
       this,
       (tx) => tx.objectStore(this._cfg.name).clear(),
+      "readwrite",
       () => {},
       transaction,
     );
@@ -268,6 +275,7 @@ export class Store<T> {
 async function _wrapTxOp<T, K>(
   store: Store<T>,
   txOp: (tx: IDBTransaction) => IDBRequest,
+  mode: IDBTransactionMode,
   resolution: (request: IDBRequest) => K,
   givenTx?: IDBTransaction,
 ): Promise<K> {
@@ -281,8 +289,7 @@ async function _wrapTxOp<T, K>(
     }
 
     // Create transaction if one isn't provided already
-    const tx =
-      givenTx ?? store.database.transaction([store._cfg.name], "readwrite");
+    const tx = givenTx ?? store.database.transaction([store._cfg.name], mode);
 
     // Make the request
     const req = txOp(tx);

@@ -134,9 +134,9 @@ describe("Read tests", () => {
   });
 
   test("Filter with limit", async () => {
-    const key = 500;
+    const key = 999;
     await expect(
-      usersStore.filter((record) => record.username == "500", 1),
+      usersStore.filter((record) => record.username == key.toString(), 1),
     ).resolves.toMatchObject<User[]>([
       {
         username: key.toString(),
