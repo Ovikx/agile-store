@@ -17,7 +17,7 @@ export async function populate(
     records.push(generateRecord());
   }
 
-  await store.bulkAdd(records, true);
+  await store.addMany(records, true);
 }
 
 export function generateRecord(): User {
@@ -27,7 +27,7 @@ export function generateRecord(): User {
       min: 13,
       max: 60,
     }),
-    registrationDate: faker.date.recent().getMilliseconds(),
+    registrationDate: faker.date.recent().valueOf(),
     verified: faker.datatype.boolean(),
   };
 }

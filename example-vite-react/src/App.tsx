@@ -16,7 +16,7 @@ function App() {
     .catch((err) => console.log(err));
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   void itemsStore
-    .getByKey("HEHHHLOO WORLD!!!!")
+    .getOneByKey("HEHHHLOO WORLD!!!!")
     .then((res) => console.log(res ? JSON.stringify(res) : "could not find"));
 
   return (

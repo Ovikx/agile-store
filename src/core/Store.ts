@@ -40,7 +40,7 @@ export class Store<T> {
    * @param transaction Transaction to perform this operation in
    * @returns Void
    */
-  async bulkAdd(
+  async addMany(
     records: T[],
     ignoreErrors: boolean,
     transaction?: IDBTransaction,
@@ -128,7 +128,7 @@ export class Store<T> {
    * @param transaction A transaction, if one has already been started
    * @returns A matching record or null if nothing has been found
    */
-  async getByKey(
+  async getOneByKey(
     key: T[this["_cfg"]["keyPath"]],
     transaction?: IDBTransaction,
   ): Promise<T | null> {
@@ -147,9 +147,10 @@ export class Store<T> {
    * @param value Value to search for
    * @returns Object of type T if something was found, null if nothing was found
    */
-  async getByIndex(
+  async getOneByIndex(
     index: this["_cfg"]["indices"][number],
     value: T[typeof index],
+    transaction?: IDBTransaction,
   ): Promise<T | null> {
     if (!this._cfg.indices.includes(index)) {
       throw new Error(
@@ -166,6 +167,40 @@ export class Store<T> {
           .get(IDBKeyRange.only(value)),
       "readonly",
       (req) => req.result ?? null,
+      transaction,
+    );
+  }
+
+  async getManyByKey(
+    range: IDBKeyRange,
+    transaction?: IDBTransaction,
+  ): Promise<T[]> {
+    return _wrapTxOp(
+      this,
+      (tx) => tx.objectStore(this._cfg.name).getAll(range),
+      "readonly",
+      (res) => res.result,
+      transaction,
+    );
+  }
+
+  async getManyByIndex(
+    index: this["_cfg"]["indices"][number],
+    range: IDBKeyRange,
+    transaction?: IDBTransaction,
+  ): Promise<T[]> {
+    if (!this._cfg.indices.includes(index)) {
+      throw new Error(
+        "The index you passed in isn't an index you listed in the constructor of this store.",
+      );
+    }
+
+    return _wrapTxOp(
+      this,
+      (tx) => tx.objectStore(this._cfg.name).index(index).getAll(range),
+      "readonly",
+      (res) => res.result,
+      transaction,
     );
   }
 
@@ -315,6 +350,57 @@ async function _wrapTxOp<T, K>(
     }
   });
 }
+
+// async function _wrapCursorGetOp<T>(
+//   store: Store<T>,
+//   txOp: (tx: IDBTransaction) => IDBRequest,
+//   givenTx?: IDBTransaction,
+// ): Promise<T[]> {
+//   return new Promise<T[]>((resolve, reject) => {
+//     // Ensure the DB is defined
+//     if (store.database == undefined) {
+//       reject(
+//         new Error("Database object hasn't been injected into this store."),
+//       );
+//       return;
+//     }
+
+//     const records: T[] = [];
+//     let iter = 0;
+
+//     // Create transaction if one isn't provided already
+//     const tx =
+//       givenTx ?? store.database.transaction([store._cfg.name], "readonly");
+//     const cursorReq = txOp(tx);
+
+//     cursorReq.onsuccess = () => {
+//       const cursor = cursorReq.result;
+//       if (iter == 0) console.log(cursor);
+//       if (cursor) {
+//         iter++;
+//         records.push(cursor.value);
+//         cursor.continue();
+//       } else if (iter == 0) {
+//         resolve(records);
+//       }
+//     };
+
+//     cursorReq.onerror = () => {
+//       reject(convertDOMException(cursorReq.error));
+//     };
+
+//     // Handle transaction resolution if it's original
+//     if (!givenTx) {
+//       tx.oncomplete = () => {
+//         resolve(records);
+//       };
+
+//       tx.onerror = () => {
+//         reject(convertDOMException(tx.error));
+//       };
+//     }
+//   });
+// }
 
 export async function createStores<T extends object>(
   dbName: string,

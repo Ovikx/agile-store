@@ -57,7 +57,7 @@ describe("Insert tests", () => {
       });
     }
 
-    await expect(usersStore.bulkAdd(records, false)).resolves.toBe(numRecords);
+    await expect(usersStore.addMany(records, false)).resolves.toBe(numRecords);
   });
 
   test("Bulk insert lots of duplicate records (ignore errors)", async () => {
@@ -71,7 +71,7 @@ describe("Insert tests", () => {
       });
     }
 
-    await expect(usersStore.bulkAdd(records, true)).resolves.not.toThrow();
+    await expect(usersStore.addMany(records, true)).resolves.not.toThrow();
   });
 
   test("Bulk insert lots of duplicate records (allow errors)", async () => {
@@ -85,7 +85,7 @@ describe("Insert tests", () => {
       });
     }
 
-    await expect(usersStore.bulkAdd(records, false)).rejects.toThrow();
+    await expect(usersStore.addMany(records, false)).rejects.toThrow();
   });
 });
 
@@ -93,7 +93,7 @@ describe("Read tests", () => {
   test("Get existing record by key", async () => {
     const key = 500;
     await expect(
-      usersStore.getByKey(key.toString()),
+      usersStore.getOneByKey(key.toString()),
     ).resolves.toMatchObject<User>({
       username: key.toString(),
       age: key,
@@ -104,13 +104,13 @@ describe("Read tests", () => {
 
   test("Get nonexistent record by key", async () => {
     const key = -1;
-    await expect(usersStore.getByKey(key.toString())).resolves.toBeNull();
+    await expect(usersStore.getOneByKey(key.toString())).resolves.toBeNull();
   });
 
   test("Get existing record by index", async () => {
     const key = 500;
     await expect(
-      usersStore.getByIndex("registrationDate", key),
+      usersStore.getOneByIndex("registrationDate", key),
     ).resolves.toMatchObject<User>({
       username: key.toString(),
       age: key,
@@ -123,14 +123,47 @@ describe("Read tests", () => {
     const key = -1;
 
     await expect(
-      usersStore.getByIndex("registrationDate", key),
+      usersStore.getOneByIndex("registrationDate", key),
     ).resolves.toBeNull();
   });
 
   test("Get record by nonexistent index", async () => {
     const key = 1;
 
-    await expect(usersStore.getByIndex("age", key)).rejects.toThrow();
+    await expect(usersStore.getOneByIndex("age", key)).rejects.toThrow();
+  });
+
+  test("Get many nonexistent records by key", async () => {
+    const records = await usersStore.getManyByKey(
+      IDBKeyRange.only("googooggaaaga"),
+    );
+    expect(records).toHaveLength(0);
+  });
+
+  test("Get many records by key", async () => {
+    const records = await usersStore.getManyByKey(
+      IDBKeyRange.bound("501", "600"),
+    );
+
+    expect(records).not.toHaveLength(0);
+  });
+
+  test("Get many records by nonexistent index", async () => {
+    await expect(
+      usersStore.getManyByIndex("age", IDBKeyRange.only(-1)),
+    ).rejects.toThrow();
+  });
+
+  test("Get many nonexistent records by index", async () => {
+    await expect(
+      usersStore.getManyByIndex("registrationDate", IDBKeyRange.only(-1)),
+    ).resolves.toHaveLength(0);
+  });
+
+  test("Get many records by index", async () => {
+    await expect(
+      usersStore.getManyByIndex("registrationDate", IDBKeyRange.bound(1, 100)),
+    ).resolves.toHaveLength(100);
   });
 
   test("Filter with limit", async () => {
@@ -159,7 +192,7 @@ describe("Delete tests", () => {
     });
 
     await usersStore.deleteByKey(key);
-    const res = await usersStore.getByKey(key);
+    const res = await usersStore.getOneByKey(key);
 
     expect(res).toBeNull();
   });
@@ -178,7 +211,7 @@ describe("Update tests", () => {
     await usersStore.add(record);
 
     await usersStore.put({ ...record, age: newAge });
-    const res = await usersStore.getByKey(key);
+    const res = await usersStore.getOneByKey(key);
 
     expect(res?.age).toBe(newAge);
   });
@@ -199,7 +232,7 @@ describe("Misc. tests", () => {
     for (let i = 0; i < 1000; i++) {
       toAdd.push(generateRecord());
     }
-    await usersStore.bulkAdd(toAdd, true);
+    await usersStore.addMany(toAdd, true);
     await expect(usersStore.count()).resolves.toBeGreaterThan(0);
   });
 });
