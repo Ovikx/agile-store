@@ -73,7 +73,7 @@ itemsStore.add({
 #### Get a record
 
 ```ts
-const record = await itemsStore.getByKey("Piano");
+const record = await itemsStore.getOne("name", "Piano");
 ```
 
 Note that there are multiple ways to query for records, including a `filter` method that uses a user-provided qualifier function to return all records that pass the function.

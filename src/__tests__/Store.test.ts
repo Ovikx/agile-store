@@ -132,7 +132,52 @@ describe("Read tests", () => {
 
     await expect(usersStore.getOneByIndex("age", key)).rejects.toThrow();
   });
+  //
+  test("Get existing record by key (getOne)", async () => {
+    const key = 500;
+    await expect(
+      usersStore.getOne("username", key.toString()),
+    ).resolves.toMatchObject<User>({
+      username: key.toString(),
+      age: key,
+      registrationDate: key,
+      verified: !!key,
+    });
+  });
 
+  test("Get nonexistent record by key (getOne)", async () => {
+    const key = -1;
+    await expect(
+      usersStore.getOne("username", key.toString()),
+    ).resolves.toBeNull();
+  });
+
+  test("Get existing record by index (getOne)", async () => {
+    const key = 500;
+    await expect(
+      usersStore.getOne("registrationDate", key),
+    ).resolves.toMatchObject<User>({
+      username: key.toString(),
+      age: key,
+      registrationDate: key,
+      verified: !!key,
+    });
+  });
+
+  test("Get nonexistent record by index (getOne)", async () => {
+    const key = -1;
+
+    await expect(
+      usersStore.getOne("registrationDate", key),
+    ).resolves.toBeNull();
+  });
+
+  test("Get record by nonexistent index (getOne)", async () => {
+    const key = 1;
+
+    await expect(usersStore.getOne("age", key)).rejects.toThrow();
+  });
+  //
   test("Get many nonexistent records by key", async () => {
     const records = await usersStore.getManyByKey(
       IDBKeyRange.only("googooggaaaga"),

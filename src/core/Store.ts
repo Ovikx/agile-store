@@ -204,6 +204,20 @@ export class Store<T> {
     );
   }
 
+  async getOne<K extends keyof T & string>(
+    property: K,
+    value: T[K],
+    transaction?: IDBTransaction,
+  ): Promise<T | null> {
+    if (this._cfg.indices.includes(property))
+      return this.getOneByIndex(property, value, transaction);
+    if (this._cfg.keyPath == property)
+      return this.getOneByKey(value, transaction);
+    throw new Error(
+      "The property provided is neither the key nor the index, so this operation cannot be performed.",
+    );
+  }
+
   /**
    * Puts a record in the store (updates if key exists, adds if it doesn't)
    * @param record Record to put in the store
