@@ -89,7 +89,7 @@ describe("Insert tests", () => {
   });
 });
 
-describe("Read tests", () => {
+describe("Single-record reading tests with specific methods (getOneByKey, getOneByIndex)", () => {
   test("Get existing record by key", async () => {
     const key = 500;
     await expect(
@@ -132,7 +132,9 @@ describe("Read tests", () => {
 
     await expect(usersStore.getOneByIndex("age", key)).rejects.toThrow();
   });
-  //
+});
+
+describe("Single-record reading tests with general method (getOne)", () => {
   test("Get existing record by key (getOne)", async () => {
     const key = 500;
     await expect(
@@ -177,40 +179,83 @@ describe("Read tests", () => {
 
     await expect(usersStore.getOne("age", key)).rejects.toThrow();
   });
-  //
+});
+
+describe("Multiple-record reading tests with specific methods (getManyByKey, getManyByIndex)", () => {
   test("Get many nonexistent records by key", async () => {
-    const records = await usersStore.getManyByKey(
-      IDBKeyRange.only("googooggaaaga"),
-    );
+    const records = await usersStore.getManyByKey({ only: "googoogaagaa" });
     expect(records).toHaveLength(0);
   });
 
   test("Get many records by key", async () => {
-    const records = await usersStore.getManyByKey(
-      IDBKeyRange.bound("501", "600"),
-    );
+    const records = await usersStore.getManyByKey({
+      lower: "501",
+      upper: "600",
+    });
 
     expect(records).not.toHaveLength(0);
   });
 
   test("Get many records by nonexistent index", async () => {
     await expect(
-      usersStore.getManyByIndex("age", IDBKeyRange.only(-1)),
+      usersStore.getManyByIndex("age", {
+        only: -1,
+      }),
     ).rejects.toThrow();
   });
 
   test("Get many nonexistent records by index", async () => {
     await expect(
-      usersStore.getManyByIndex("registrationDate", IDBKeyRange.only(-1)),
+      usersStore.getManyByIndex("registrationDate", { only: -1 }),
     ).resolves.toHaveLength(0);
   });
 
   test("Get many records by index", async () => {
     await expect(
-      usersStore.getManyByIndex("registrationDate", IDBKeyRange.bound(1, 100)),
+      usersStore.getManyByIndex("registrationDate", { lower: 1, upper: 100 }),
     ).resolves.toHaveLength(100);
   });
+});
 
+describe("Multiple-record reading tests with general method", () => {
+  test("Get many nonexistent records by key (getMany)", async () => {
+    const records = await usersStore.getMany("username", {
+      only: "googoogaagaa",
+    });
+    expect(records).toHaveLength(0);
+  });
+
+  test("Get many records by key (getMany)", async () => {
+    const records = await usersStore.getMany("username", {
+      lower: "501",
+      upper: "600",
+    });
+
+    expect(records).not.toHaveLength(0);
+  });
+
+  test("Get many records by nonexistent index (getMany)", async () => {
+    await expect(
+      usersStore.getMany("age", {
+        only: -1,
+      }),
+    ).rejects.toThrow();
+  });
+
+  test("Get many nonexistent records by index (getMany)", async () => {
+    await expect(
+      usersStore.getMany("registrationDate", { only: -1 }),
+    ).resolves.toHaveLength(0);
+  });
+
+  test("Get many records by index (getMany)", async () => {
+    await expect(
+      usersStore.getMany("registrationDate", { lower: 1, upper: 100 }),
+    ).resolves.toHaveLength(100);
+  });
+});
+
+describe("Filter tests", () => {
   test("Filter with limit", async () => {
     const key = 999;
     await expect(

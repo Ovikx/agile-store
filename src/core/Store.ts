@@ -1,4 +1,4 @@
-import { SearchQualifier, StoreConfig } from "../types/types";
+import { SearchQualifier, SearchRange, StoreConfig } from "../types/types";
 import { convertDOMException } from "../utils";
 
 export class Store<T> {
@@ -172,12 +172,12 @@ export class Store<T> {
   }
 
   async getManyByKey(
-    range: IDBKeyRange,
+    range: Partial<SearchRange<T>>,
     transaction?: IDBTransaction,
   ): Promise<T[]> {
     return _wrapTxOp(
       this,
-      (tx) => tx.objectStore(this._cfg.name).getAll(range),
+      (tx) => tx.objectStore(this._cfg.name).getAll(_parseRangeOptions(range)),
       "readonly",
       (res) => res.result,
       transaction,
@@ -186,7 +186,7 @@ export class Store<T> {
 
   async getManyByIndex(
     index: this["_cfg"]["indices"][number],
-    range: IDBKeyRange,
+    range: Partial<SearchRange<T>>,
     transaction?: IDBTransaction,
   ): Promise<T[]> {
     if (!this._cfg.indices.includes(index)) {
@@ -197,7 +197,11 @@ export class Store<T> {
 
     return _wrapTxOp(
       this,
-      (tx) => tx.objectStore(this._cfg.name).index(index).getAll(range),
+      (tx) =>
+        tx
+          .objectStore(this._cfg.name)
+          .index(index)
+          .getAll(_parseRangeOptions(range)),
       "readonly",
       (res) => res.result,
       transaction,
@@ -213,6 +217,20 @@ export class Store<T> {
       return this.getOneByIndex(property, value, transaction);
     if (this._cfg.keyPath == property)
       return this.getOneByKey(value, transaction);
+    throw new Error(
+      "The property provided is neither the key nor the index, so this operation cannot be performed.",
+    );
+  }
+
+  async getMany<K extends keyof T & string>(
+    property: K,
+    range: Partial<SearchRange<T, K>>,
+    transaction?: IDBTransaction,
+  ): Promise<T[]> {
+    if (this._cfg.indices.includes(property))
+      return this.getManyByIndex(property, range, transaction);
+    if (this._cfg.keyPath == property)
+      return this.getManyByKey(range, transaction);
     throw new Error(
       "The property provided is neither the key nor the index, so this operation cannot be performed.",
     );
@@ -363,6 +381,39 @@ async function _wrapTxOp<T, K>(
       };
     }
   });
+}
+
+/**
+ * Parses the custom typed SearchRange interface into an IDBKeyRange object
+ * @param range Search range options
+ * @returns IDBKeyRange ready for use in internal methods
+ */
+function _parseRangeOptions<T>({
+  lower,
+  upper,
+  lowerOpen,
+  upperOpen,
+  only,
+}: Partial<SearchRange<T>>): IDBKeyRange | undefined {
+  let parsed: IDBKeyRange | undefined;
+
+  // Most specific (e.g. only) takes priority over least specific (e.g. lower/upper)
+  // lower
+  if (lower != undefined && upper == undefined)
+    parsed = IDBKeyRange.lowerBound(lower, lowerOpen);
+
+  // upper
+  if (lower == undefined && upper != undefined)
+    parsed = IDBKeyRange.upperBound(upper, upperOpen);
+
+  // bound
+  if (lower != undefined && upper != undefined)
+    parsed = IDBKeyRange.bound(lower, upper, lowerOpen, upperOpen);
+
+  // only
+  if (only != undefined) parsed = IDBKeyRange.only(only);
+
+  return parsed;
 }
 
 // async function _wrapCursorGetOp<T>(
