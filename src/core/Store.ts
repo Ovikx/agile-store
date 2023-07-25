@@ -108,7 +108,7 @@ export class Store<T> {
     });
   }
 
-  async deleteByKey(
+  async deleteOne(
     key: T[this["_cfg"]["keyPath"]],
     transaction?: IDBTransaction,
   ): Promise<void> {
@@ -121,7 +121,90 @@ export class Store<T> {
     );
   }
 
-  // TODO: fix type to constrain the input to the actual type of keyPath instead of T[keyof T]
+  async deleteManyByIndex(
+    index: this["_cfg"]["indices"][number],
+    range: Partial<SearchRange<T>>,
+    transaction?: IDBTransaction,
+  ): Promise<number> {
+    return new Promise((resolve, reject) => {
+      // Ensure the DB is defined
+      if (this.database == undefined) {
+        reject(
+          new Error("Database object hasn't been injected into this store."),
+        );
+        return;
+      }
+
+      let numDeleted = 0;
+
+      // Create transaction if one isn't provided already
+      const tx =
+        transaction ?? this.database.transaction([this._cfg.name], "readwrite");
+
+      const cursorReq = tx
+        .objectStore(this._cfg.name)
+        .index(index)
+        .openCursor(_parseRangeOptions(range));
+
+      cursorReq.onsuccess = () => {
+        const cursor = cursorReq.result;
+        if (cursor) {
+          const delReq = cursor.delete();
+          delReq.onsuccess = () => numDeleted++;
+          delReq.onerror = (event) => {
+            event.preventDefault();
+          };
+
+          cursor.continue();
+        } else if (transaction) {
+          resolve(numDeleted);
+        }
+      };
+
+      cursorReq.onerror = () => {
+        reject(convertDOMException(cursorReq.error));
+      };
+
+      // Handle transaction resolution if it's original
+      if (!transaction) {
+        tx.oncomplete = () => {
+          resolve(numDeleted);
+        };
+
+        tx.onerror = () => {
+          reject(convertDOMException(tx.error));
+        };
+      }
+    });
+  }
+
+  async deleteManyByKeyRange(
+    range: Partial<SearchRange<T>>,
+    transaction?: IDBTransaction,
+  ): Promise<void> {
+    return _wrapTxOp(
+      this,
+      (tx) => tx.objectStore(this._cfg.name).delete(_parseRangeOptions(range)!),
+      "readwrite",
+      () => {},
+      transaction,
+    );
+  }
+
+  async deleteMany<K extends keyof T & string>(
+    property: K,
+    range: Partial<SearchRange<T, K>>,
+    transaction?: IDBTransaction,
+  ) {
+    if (this._cfg.indices.includes(property))
+      return this.deleteManyByIndex(property, range, transaction);
+    if (this._cfg.keyPath == property)
+      return this.deleteManyByKeyRange(range, transaction);
+    throw new Error(
+      "The property provided is neither the key nor the index, so this operation cannot be performed.",
+    );
+  }
+
   /**
    * Retrieves a record from the store by the given key
    * @param key Key to find

@@ -89,7 +89,7 @@ describe("Insert tests", () => {
   });
 });
 
-describe("Single-record reading tests with specific methods (getOneByKey, getOneByIndex)", () => {
+describe("Single-record reading tests with particular methods (getOneByKey, getOneByIndex)", () => {
   test("Get existing record by key", async () => {
     const key = 500;
     await expect(
@@ -181,7 +181,7 @@ describe("Single-record reading tests with general method (getOne)", () => {
   });
 });
 
-describe("Multiple-record reading tests with specific methods (getManyByKey, getManyByIndex)", () => {
+describe("Multiple-record reading tests with particular methods (getManyByKey, getManyByIndex)", () => {
   test("Get many nonexistent records by key", async () => {
     const records = await usersStore.getManyByKey({ only: "googoogaagaa" });
     expect(records).toHaveLength(0);
@@ -271,7 +271,7 @@ describe("Filter tests", () => {
   });
 });
 
-describe("Delete tests", () => {
+describe("Delete tests with particular methods", () => {
   test("Delete record by key", async () => {
     const key = "NONEXISTENT";
     await usersStore.add({
@@ -281,10 +281,132 @@ describe("Delete tests", () => {
       verified: false,
     });
 
-    await usersStore.deleteByKey(key);
+    await usersStore.deleteOne(key);
     const res = await usersStore.getOneByKey(key);
 
     expect(res).toBeNull();
+  });
+
+  test("Delete many by index", async () => {
+    const value = 3141592;
+    await usersStore.addMany(
+      [
+        {
+          username: value.toString(),
+          age: 0,
+          registrationDate: value,
+          verified: false,
+        },
+        {
+          username: (value + 1).toString(),
+          age: 0,
+          registrationDate: value,
+          verified: false,
+        },
+      ],
+      false,
+    );
+
+    const res = await usersStore.deleteManyByIndex("registrationDate", {
+      only: value,
+    });
+
+    expect(res).toBe(2);
+  });
+
+  test("Delete many by key range", async () => {
+    const value = 3141592;
+    await usersStore.addMany(
+      [
+        {
+          username: value.toString(),
+          age: 0,
+          registrationDate: 0,
+          verified: false,
+        },
+        {
+          username: (value + 1).toString(),
+          age: 0,
+          registrationDate: 0,
+          verified: false,
+        },
+      ],
+      false,
+    );
+
+    await usersStore.deleteManyByKeyRange({
+      lower: value.toString(),
+      upper: (value + 1).toString(),
+    });
+
+    const res = await usersStore.getMany("username", {
+      lower: value.toString(),
+      upper: (value + 1).toString(),
+    });
+
+    expect(res).toMatchObject([undefined, undefined]);
+  });
+});
+
+describe("Delete tests with general methods (deleteOne, deleteMany)", () => {
+  test("Delete many by index", async () => {
+    const value = 3141592;
+    await usersStore.addMany(
+      [
+        {
+          username: value.toString(),
+          age: 0,
+          registrationDate: value,
+          verified: false,
+        },
+        {
+          username: (value + 1).toString(),
+          age: 0,
+          registrationDate: value,
+          verified: false,
+        },
+      ],
+      false,
+    );
+
+    const res = await usersStore.deleteMany("registrationDate", {
+      only: value,
+    });
+
+    expect(res).toBe(2);
+  });
+
+  test("Delete many by key range", async () => {
+    const value = 3141592;
+    await usersStore.addMany(
+      [
+        {
+          username: value.toString(),
+          age: 0,
+          registrationDate: 0,
+          verified: false,
+        },
+        {
+          username: (value + 1).toString(),
+          age: 0,
+          registrationDate: 0,
+          verified: false,
+        },
+      ],
+      false,
+    );
+
+    await usersStore.deleteMany("username", {
+      lower: value.toString(),
+      upper: (value + 1).toString(),
+    });
+
+    const res = await usersStore.getMany("username", {
+      lower: value.toString(),
+      upper: (value + 1).toString(),
+    });
+
+    expect(res).toMatchObject([undefined, undefined]);
   });
 });
 
