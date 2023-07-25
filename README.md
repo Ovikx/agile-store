@@ -93,7 +93,7 @@ Note that `put` requires a full object of the store's type. Partial object updat
 #### Delete a record
 
 ```ts
-itemsStore.deleteByKey("Piano");
+itemsStore.deleteOne("Piano");
 ```
 
 ## License
