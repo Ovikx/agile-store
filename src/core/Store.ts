@@ -108,6 +108,12 @@ export class Store<T> {
     });
   }
 
+  /**
+   * Deletes one record by its key
+   * @param key Key of the record to delete
+   * @param transaction A transaction that has already started
+   * @returns Void
+   */
   async deleteOne(
     key: T[this["_cfg"]["keyPath"]],
     transaction?: IDBTransaction,
@@ -291,6 +297,13 @@ export class Store<T> {
     );
   }
 
+  /**
+   * Gets one record by a property and a corresponding value
+   * @param property Property to search
+   * @param value Value of the property
+   * @param transaction A transaction that has already been started
+   * @returns Record or null
+   */
   async getOne<K extends keyof T & string>(
     property: K,
     value: T[K],
@@ -305,6 +318,13 @@ export class Store<T> {
     );
   }
 
+  /**
+   * Gets multiple records given a property and a corresponding value
+   * @param property Property to search
+   * @param range Range of the property's value
+   * @param transaction A transaction if one has already been started
+   * @returns An array of records
+   */
   async getMany<K extends keyof T & string>(
     property: K,
     range: Partial<SearchRange<T, K>>,
@@ -335,6 +355,12 @@ export class Store<T> {
     );
   }
 
+  /**
+   * Updates a record if it exists
+   * @param key Key to search for
+   * @param updatedProperties Partial object of type T which determines which properties should be updated to what
+   * @returns Void
+   */
   async updateOne(
     key: T[this["_cfg"]["keyPath"]],
     updatedProperties: Partial<T>,
