@@ -335,6 +335,16 @@ export class Store<T> {
     );
   }
 
+  async updateOne(
+    key: T[this["_cfg"]["keyPath"]],
+    updatedProperties: Partial<T>,
+  ) {
+    const toUpdate = await this.getOne(this._cfg.keyPath, key);
+    if (toUpdate == null)
+      throw new Error("Unable to retrieve record information");
+    return await this.put({ ...toUpdate, ...updatedProperties });
+  }
+
   /**
    * Returns an array of objects that satisfy the given qualifying function
    * @param qualifier A function that evaluates if a record satisfies the query by returning a boolean

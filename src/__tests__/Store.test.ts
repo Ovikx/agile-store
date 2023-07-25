@@ -412,7 +412,7 @@ describe("Delete tests with general methods (deleteOne, deleteMany)", () => {
 
 describe("Update tests", () => {
   test("Update by key", async () => {
-    const key = "UPDATE";
+    const key = "UPDATEBYKEY";
     const newAge = 18;
     const record = {
       username: key,
@@ -426,6 +426,23 @@ describe("Update tests", () => {
     const res = await usersStore.getOneByKey(key);
 
     expect(res?.age).toBe(newAge);
+  });
+
+  test("Partial update by key", async () => {
+    const key = "PARTIALUPDATEBYKEY";
+    const newAge = 18;
+    const record = {
+      username: key,
+      age: 0,
+      registrationDate: 0,
+      verified: false,
+    };
+    await usersStore.add(record);
+
+    await usersStore.updateOne(key, { age: newAge });
+    const res = await usersStore.getOneByKey(key);
+
+    expect(res).toMatchObject({ ...record, age: newAge });
   });
 });
 
