@@ -1,4 +1,9 @@
-import { SearchQualifier, SearchRange, StoreConfig } from "../types/types";
+import {
+  DBConfig,
+  SearchQualifier,
+  SearchRange,
+  StoreConfig,
+} from "../types/types";
 import { convertDOMException } from "../utils";
 
 export class Store<T> {
@@ -535,58 +540,25 @@ function _parseRangeOptions<T>({
   return parsed;
 }
 
-// async function _wrapCursorGetOp<T>(
-//   store: Store<T>,
-//   txOp: (tx: IDBTransaction) => IDBRequest,
-//   givenTx?: IDBTransaction,
-// ): Promise<T[]> {
-//   return new Promise<T[]>((resolve, reject) => {
-//     // Ensure the DB is defined
-//     if (store.database == undefined) {
-//       reject(
-//         new Error("Database object hasn't been injected into this store."),
-//       );
-//       return;
-//     }
+/**
+ * Returns a store that is safe to use, meaning that it has a database injected into it
+ * This function is useful for when you can't use `createStores(...)`
+ * @param store Store to use
+ * @param dbConfig Database config
+ * @returns The inputted Store with a database injected properly
+ */
+export async function useStore<T>(
+  store: Store<T>,
+  dbConfig: DBConfig,
+): Promise<Store<T>> {
+  if (!store.database) {
+    await createStores(dbConfig.dbName, dbConfig.version, [store]);
+  }
 
-//     const records: T[] = [];
-//     let iter = 0;
+  return store;
+}
 
-//     // Create transaction if one isn't provided already
-//     const tx =
-//       givenTx ?? store.database.transaction([store._cfg.name], "readonly");
-//     const cursorReq = txOp(tx);
-
-//     cursorReq.onsuccess = () => {
-//       const cursor = cursorReq.result;
-//       if (iter == 0) console.log(cursor);
-//       if (cursor) {
-//         iter++;
-//         records.push(cursor.value);
-//         cursor.continue();
-//       } else if (iter == 0) {
-//         resolve(records);
-//       }
-//     };
-
-//     cursorReq.onerror = () => {
-//       reject(convertDOMException(cursorReq.error));
-//     };
-
-//     // Handle transaction resolution if it's original
-//     if (!givenTx) {
-//       tx.oncomplete = () => {
-//         resolve(records);
-//       };
-
-//       tx.onerror = () => {
-//         reject(convertDOMException(tx.error));
-//       };
-//     }
-//   });
-// }
-
-export async function createStores<T extends object>(
+export async function createStores<T>(
   dbName: string,
   version: number,
   stores: Store<T>[],

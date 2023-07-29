@@ -5,6 +5,11 @@ export interface StoreConfig<T> {
   readonly indices: (keyof T & string)[];
 }
 
+export interface DBConfig {
+  dbName: string;
+  version: number;
+}
+
 export type SearchQualifier<T> = (record: T) => boolean;
 
 export interface SearchRange<T, K extends keyof T = keyof T> {
