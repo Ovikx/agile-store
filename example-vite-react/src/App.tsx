@@ -2,22 +2,35 @@ import { useState } from "react";
 import reactLogo from "./assets/react.svg";
 import viteLogo from "/vite.svg";
 import "./App.css";
-import { itemsStore } from "./db/db";
+import { dbConfig, itemsStore } from "./db/db";
+import { useStore } from "../../src/core/Store";
 
 function App() {
   const [count, setCount] = useState(0);
 
-  itemsStore
-    .add({
-      name: "HEHHHLOO WORLD!!!!",
-      price: 1000,
-      onSale: true,
+  useStore(itemsStore, dbConfig)
+    .then((store) => {
+      store
+        .add({
+          name: "HEHHHLOO WORLD!!!!",
+          price: 1000,
+          onSale: true,
+        })
+        .catch((err) => console.log(err));
     })
     .catch((err) => console.log(err));
+
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
-  void itemsStore
-    .getOneByKey("HEHHHLOO WORLD!!!!")
-    .then((res) => console.log(res ? JSON.stringify(res) : "could not find"));
+  useStore(itemsStore, dbConfig)
+    .then((store) => {
+      store
+        .getOneByKey("HEHHHLOO WORLD!!!!")
+        .then((res) =>
+          console.log(res ? JSON.stringify(res) : "could not find"),
+        )
+        .catch((err) => console.log(err));
+    })
+    .catch((err) => console.log(err));
 
   return (
     <>

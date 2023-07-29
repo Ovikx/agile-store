@@ -6,3 +6,8 @@ export const itemsStore = new Store<Item>({
   autoIncrement: false,
   indices: [],
 });
+
+export const dbConfig = {
+  dbName: "test-db",
+  version: 2,
+};
