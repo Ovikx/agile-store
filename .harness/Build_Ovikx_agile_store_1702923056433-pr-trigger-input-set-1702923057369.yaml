@@ -1,0 +1,14 @@
+inputSet:
+  name: Build_Ovikx_agile_store_1702923056433-pr-trigger-input-set
+  identifier: Build_Ovikx_agile_store_1702923056433prtriggerinputset
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: Build_Ovikx_agile_store_1702923056433
+    properties:
+      ci:
+        codebase:
+          build:
+            type: PR
+            spec:
+              number: <+trigger.prNumber>
