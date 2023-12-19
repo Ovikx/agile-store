@@ -1,0 +1,14 @@
+inputSet:
+  name: Build_Ovikx_agile_store_1703008549203-push-trigger-input-set
+  identifier: Build_Ovikx_agile_store_1703008549203pushtriggerinputset
+  orgIdentifier: default
+  projectIdentifier: default_project
+  pipeline:
+    identifier: Build_Ovikx_agile_store_1703008549203
+    properties:
+      ci:
+        codebase:
+          build:
+            type: branch
+            spec:
+              branch: <+trigger.branch>
